@@ -233,7 +233,7 @@ const express = require('express');
 
 const app = express();
 dotenv.config();
-const port = process.env.PORT || 3030;
+const PORT = process.env.PORT || 3030;
 
 app.use(express.json());
 app.use(express.urlencoded());
@@ -279,6 +279,6 @@ app.post('/', async (req: any, res: { send: (arg0: string) => void; }) => {
 	res.send(wp1 + sec1 + sec2 + wp2);
 });
 
-app.listen(port, () => {
-  console.log(`[server]: Server is running at https://localhost:${port}`);
+app.listen(PORT, () => {
+  console.log(`[server]: Server is running at https://localhost:${PORT}`);
 });
