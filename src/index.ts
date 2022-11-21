@@ -1,9 +1,10 @@
 import fetch from 'node-fetch';
+import dotenv from 'dotenv';
 
 const header = {
 	method: 'GET',
 	headers: {
-		"X-Riot-Token": "RGAPI-4b9ca394-56f5-4347-98b2-aeba33a138a9",
+		"X-Riot-Token": "RGAPI-0b435288-7ac4-44a1-b1d9-cddb03fb739a",
 	},
   };
 
@@ -232,6 +233,7 @@ async function getItemIcon(id:string) {
 const express = require('express');
 
 const app = express();
+dotenv.config();
 const port = process.env.PORT || 3030;
 
 app.use(express.json());
