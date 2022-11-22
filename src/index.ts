@@ -99,7 +99,7 @@ async function getMatch(id:string, puuid:string): Promise<string> {
 		let td2 = `<td>
 				<p>${pdata.summonerName}</p>
 				<p>
-					<img src=${spell1} alt="" width="32" height="32" />
+					<img src=${spell1} width="32" height="32" />
 					<img src=${spell2} width="32" height="32" />
 					<img src=${perk1} width="32" height="32" />
 					<img src=${perk2} width="32" height="32" />
@@ -128,13 +128,7 @@ async function getMatch(id:string, puuid:string): Promise<string> {
 		const item5 = (await getItemIcon(pdata.item5) as string);
 		const item6 = (await getItemIcon(pdata.item6) as string);
 		let td5 = `<td colspan="4">
-				<img src=${item0} alt="" width="32" height="32" />
-				<img src=${item1} width="32" height="32" />
-				<img src=${item2} width="32" height="32" />
-				<img src=${item3} width="32" height="32" />
-				<img src=${item4} width="32" height="32" />
-				<img src=${item5} width="32" height="32" />
-				<img src=${item6} width="32" height="32" />
+				${item0} ${item1} ${item2} ${item3} ${item4} ${item5} ${item6}
 			</td>`;
 		table+=td5
 
@@ -206,7 +200,7 @@ async function getPerkIcon(id:number): Promise<string> {
 }
 
 async function getItemIcon(id:string) {
-	// produce the icon url of the item of the given id
+	// produce the icon <img> of the item of the given id
 
 	try {
 	  	const res = await fetch('http://ddragon.leagueoflegends.com/cdn/12.22.1/data/en_US/item.json');
@@ -216,7 +210,16 @@ async function getItemIcon(id:string) {
 
 		const result = (await res.json());
 		const item = result.data[id];
-		return 'http://ddragon.leagueoflegends.com/cdn/12.22.1/img/item/'+item.image.full;
+
+		if (item) {
+			return `<img
+				src=${'http://ddragon.leagueoflegends.com/cdn/12.22.1/img/item/'+item.image.full} 
+				width="32" height="32"
+			/>`;
+		} else {
+			return '';
+		}
+		
 	
 	} catch (error) {
 		if (error instanceof Error) {
