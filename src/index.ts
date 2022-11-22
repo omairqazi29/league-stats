@@ -87,7 +87,7 @@ async function getMatch(id:string, puuid:string): Promise<string> {
 		} else {
 			let td1 = `<td>
 					<p>Defeat</p>
-					<p>${duration} seconds</p>
+					<p>${Math.round((duration/60) * 100) / 100} minutes</p>
 				</td>`;
 			table+=td1;
 		};
