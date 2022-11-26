@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 const header = {
 	method: 'GET',
 	headers: {
-		"X-Riot-Token": "RGAPI-edcb304f-8ffd-47df-afc6-14dd2b45f4d7",
+		"X-Riot-Token": "RGAPI-ba8c0490-b62e-4037-b007-4107827abd19",
 	},
   };
 
