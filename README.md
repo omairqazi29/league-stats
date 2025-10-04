@@ -20,10 +20,6 @@ A modern League of Legends stats tracker that lets you view recent match perform
 - **Deployment:** Render
 - **Styling:** Vanilla CSS with glassmorphism effects
 
-## Screenshots
-
-![League Stats Interface](https://via.placeholder.com/800x400?text=League+Stats)
-
 ## Getting Started
 
 ### Prerequisites
