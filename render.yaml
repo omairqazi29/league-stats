@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: league-stats
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run postinstall
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.12.1
+      - key: RIOT_API_KEY
+        sync: false
