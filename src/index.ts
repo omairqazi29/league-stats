@@ -60,8 +60,8 @@ async function getMatches(puuid:string): Promise<string>{
 			matches.push(match);
 		}
 
-		let lom = '<ul>' + matches.map(m => '<li>'+m+'</li>').join('') + '</ul>';
-		return lom;
+		return matches.map(m => '<li class="match-item">'+m+'</li>').join('');
+
 
 	}
 	catch (error) {
@@ -89,19 +89,19 @@ async function getMatch(id:string, puuid:string): Promise<string> {
 		const result = (await res.json());
 		const pdata = result.info.participants.filter((p:any) => p.puuid === puuid)[0];
 
-		var table = '<table border="1"><tbody><tr>'
+		var table = '<table><tbody><tr>'
 
 		const duration = result.info.gameDuration;
 		if (pdata.win) {
 			let td1 = `<td>
-					<p>Victory</p>
-					<p>${Math.round((duration/60) * 100) / 100} minutes</p>
+					<p class="victory">Victory</p>
+					<p>${Math.round((duration/60) * 100) / 100} min</p>
 				</td>`;
 			table+=td1;
 		} else {
 			let td1 = `<td>
-					<p>Defeat</p>
-					<p>${Math.round((duration/60) * 100) / 100} minutes</p>
+					<p class="defeat">Defeat</p>
+					<p>${Math.round((duration/60) * 100) / 100} min</p>
 				</td>`;
 			table+=td1;
 		};
@@ -255,44 +255,230 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const wp1 = `
-		<html>
-			<head><title>League Stats</title></head>
-			<body>
-		`;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>League Stats - Track Your Performance</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
 
-const sec1 =`
-		<div align="center"><h1>League of Legends Stats</h1>
-		<form action="/" method="post" id="form">
-			<input name="name" type="text" placeholder="enter Riot ID (Name#TAG)" style="text-align:center" value="" />
-		</form>
-		<p><button form="form" type="submit" value="Submit">submit</button></p>
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+			background: linear-gradient(135deg, #0a1428 0%, #1e2a3a 100%);
+			color: #e4e4e7;
+			min-height: 100vh;
+			padding: 20px;
+		}
+
+		.container {
+			max-width: 1200px;
+			margin: 0 auto;
+		}
+
+		header {
+			text-align: center;
+			padding: 40px 20px;
+		}
+
+		h1 {
+			font-size: 2.5rem;
+			font-weight: 700;
+			background: linear-gradient(to right, #c89b3c, #f0e6d2);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			background-clip: text;
+			margin-bottom: 10px;
+		}
+
+		.subtitle {
+			color: #a0a0a8;
+			font-size: 1.1rem;
+		}
+
+		.search-section {
+			background: rgba(30, 42, 58, 0.6);
+			backdrop-filter: blur(10px);
+			border: 1px solid rgba(200, 155, 60, 0.2);
+			border-radius: 12px;
+			padding: 30px;
+			margin: 30px auto;
+			max-width: 600px;
+		}
+
+		form {
+			display: flex;
+			gap: 12px;
+			flex-direction: column;
+		}
+
+		input[type="text"] {
+			width: 100%;
+			padding: 14px 20px;
+			font-size: 1rem;
+			background: rgba(10, 20, 40, 0.6);
+			border: 2px solid rgba(200, 155, 60, 0.3);
+			border-radius: 8px;
+			color: #e4e4e7;
+			transition: all 0.3s ease;
+		}
+
+		input[type="text"]::placeholder {
+			color: #71717a;
+		}
+
+		input[type="text"]:focus {
+			outline: none;
+			border-color: #c89b3c;
+			box-shadow: 0 0 0 3px rgba(200, 155, 60, 0.1);
+		}
+
+		button {
+			padding: 14px 28px;
+			font-size: 1rem;
+			font-weight: 600;
+			background: linear-gradient(135deg, #c89b3c 0%, #a67c2e 100%);
+			color: #0a1428;
+			border: none;
+			border-radius: 8px;
+			cursor: pointer;
+			transition: all 0.3s ease;
+		}
+
+		button:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 8px 16px rgba(200, 155, 60, 0.3);
+		}
+
+		button:active {
+			transform: translateY(0);
+		}
+
+		.results {
+			margin-top: 30px;
+		}
+
+		.player-name {
+			font-size: 1.8rem;
+			font-weight: 600;
+			color: #c89b3c;
+			margin-bottom: 20px;
+			text-align: center;
+		}
+
+		.matches-list {
+			list-style: none;
+			display: flex;
+			flex-direction: column;
+			gap: 16px;
+		}
+
+		.match-item {
+			background: rgba(30, 42, 58, 0.6);
+			border: 1px solid rgba(200, 155, 60, 0.2);
+			border-radius: 10px;
+			overflow: hidden;
+		}
+
+		table {
+			width: 100%;
+			border-collapse: collapse;
+		}
+
+		td {
+			padding: 16px;
+			border-bottom: 1px solid rgba(200, 155, 60, 0.1);
+		}
+
+		td:last-child {
+			border-bottom: none;
+		}
+
+		.victory {
+			color: #10b981;
+			font-weight: 600;
+		}
+
+		.defeat {
+			color: #ef4444;
+			font-weight: 600;
+		}
+
+		img {
+			border-radius: 4px;
+			margin: 2px;
+		}
+
+		.error {
+			background: rgba(239, 68, 68, 0.1);
+			border: 1px solid rgba(239, 68, 68, 0.3);
+			color: #fca5a5;
+			padding: 12px 16px;
+			border-radius: 8px;
+			text-align: center;
+		}
+
+		@media (max-width: 768px) {
+			h1 {
+				font-size: 2rem;
+			}
+
+			.search-section {
+				padding: 20px;
+			}
+
+			td {
+				padding: 12px;
+				font-size: 0.9rem;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<header>
+			<h1>League of Legends Stats</h1>
+			<p class="subtitle">Track your recent match performance</p>
+		</header>
+
+		<div class="search-section">
+			<form action="/" method="post" id="form">
+				<input name="name" type="text" placeholder="Enter Riot ID (e.g., Faker#KR1)" required />
+				<button type="submit">Search Player</button>
+			</form>
 		</div>
-		`;
+`;
 
 const wp2 = `
-				</div>
-			</body>
-		</html>
-		`;
+	</div>
+</body>
+</html>
+`;
 
 app.get('/', (req: any, res: { send: (arg0: string) => void; }) => {
-	// initialize page and form
-
-  res.send(wp1 + sec1 + wp2);
+	res.send(wp1 + wp2);
 });
 
 app.post('/', async (req: any, res: { send: (arg0: string) => void; }) => {
-	// get enterned name and display data
-
-	const name = req.body.name
-	var sec2 =`
-		<div align="center" id="result"
-		<h1>${name}</h1>
-		`;
+	const name = req.body.name;
 	const puuid = await getPUUID(name) as string;
 	const result = await getMatches(puuid) as string;
-	sec2 += result;
-	res.send(wp1 + sec1 + sec2 + wp2);
+
+	const resultsSection = `
+		<div class="results">
+			<h2 class="player-name">${name}</h2>
+			<ul class="matches-list">
+				${result}
+			</ul>
+		</div>
+	`;
+
+	res.send(wp1 + resultsSection + wp2);
 });
 
 app.listen(PORT, () => {
