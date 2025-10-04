@@ -3,17 +3,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const node_fetch_1 = __importDefault(require("node-fetch"));
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const header = {
     method: 'GET',
     headers: {
-        "X-Riot-Token": "RGAPI-0b435288-7ac4-44a1-b1d9-cddb03fb739a",
+        "X-Riot-Token": process.env.RIOT_API_KEY || "",
     },
 };
-async function getPUUID(name) {
-    // produce the puuid of the given summoner name
+async function getPUUID(riotId) {
+    // produce the puuid of the given riot id (gameName#tagLine)
     try {
-        const res = await (0, node_fetch_1.default)('https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/' + name, header);
+        const [gameName, tagLine] = riotId.split('#');
+        if (!gameName || !tagLine) {
+            throw new Error('Invalid Riot ID format. Use: GameName#TAG');
+        }
+        const res = await fetch(`https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`, header);
         if (!res.ok) {
             throw new Error('Error ' + res.status);
         }
@@ -34,35 +39,40 @@ async function getPUUID(name) {
 async function getMatches(puuid) {
     // produce the html data of the recent 5 matches of the given puuid
     try {
-        const res = await (0, node_fetch_1.default)('https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/' + puuid + '/ids?start=0&count=5&', header);
+        const res = await fetch('https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/' + puuid + '/ids?start=0&count=5&', header);
         if (!res.ok) {
-            throw new Error('Error ' + res.status);
+            throw new Error('Error fetching match list: ' + res.status);
         }
         const result = await res.json();
-        const match0 = await getMatch(result[0], puuid);
-        const match1 = await getMatch(result[1], puuid);
-        const match2 = await getMatch(result[2], puuid);
-        const match3 = await getMatch(result[3], puuid);
-        const match4 = await getMatch(result[4], puuid);
-        let lom = '<ul><li>' + match0 + '</li><li>' + match1 + '</li><li>' + match2 + '</li><li>' + match3 + '</li><li>' + match4 + '</li><ul>';
+        console.log('Found matches:', result);
+        if (!result || result.length === 0) {
+            return '<p>No recent matches found for this player.</p>';
+        }
+        const matches = [];
+        for (let i = 0; i < Math.min(5, result.length); i++) {
+            const match = await getMatch(result[i], puuid);
+            matches.push(match);
+        }
+        let lom = '<ul>' + matches.map(m => '<li>' + m + '</li>').join('') + '</ul>';
         return lom;
     }
     catch (error) {
         if (error instanceof Error) {
             console.log('error message: ', error.message);
-            return error.message;
+            return '<p>' + error.message + '</p>';
         }
         else {
             console.log('unexpected error: ', error);
-            return 'An unexpected error occurred';
+            return '<p>An unexpected error occurred</p>';
         }
     }
 }
 async function getMatch(id, puuid) {
     // produce and render the data in html of given match id and puuid
     try {
-        const res = await (0, node_fetch_1.default)('https://americas.api.riotgames.com/lol/match/v5/matches/' + id, header);
+        const res = await fetch('https://americas.api.riotgames.com/lol/match/v5/matches/' + id, header);
         if (!res.ok) {
+            console.log('Match fetch failed for:', id, 'Status:', res.status);
             throw new Error('Error ' + res.status);
         }
         const result = (await res.json());
@@ -79,7 +89,7 @@ async function getMatch(id, puuid) {
         else {
             let td1 = `<td>
 					<p>Defeat</p>
-					<p>${duration} seconds</p>
+					<p>${Math.round((duration / 60) * 100) / 100} minutes</p>
 				</td>`;
             table += td1;
         }
@@ -91,7 +101,7 @@ async function getMatch(id, puuid) {
         let td2 = `<td>
 				<p>${pdata.summonerName}</p>
 				<p>
-					<img src=${spell1} alt="" width="32" height="32" />
+					<img src=${spell1} width="32" height="32" />
 					<img src=${spell2} width="32" height="32" />
 					<img src=${perk1} width="32" height="32" />
 					<img src=${perk2} width="32" height="32" />
@@ -116,13 +126,7 @@ async function getMatch(id, puuid) {
         const item5 = await getItemIcon(pdata.item5);
         const item6 = await getItemIcon(pdata.item6);
         let td5 = `<td colspan="4">
-				<img src=${item0} alt="" width="32" height="32" />
-				<img src=${item1} width="32" height="32" />
-				<img src=${item2} width="32" height="32" />
-				<img src=${item3} width="32" height="32" />
-				<img src=${item4} width="32" height="32" />
-				<img src=${item5} width="32" height="32" />
-				<img src=${item6} width="32" height="32" />
+				${item0} ${item1} ${item2} ${item3} ${item4} ${item5} ${item6}
 			</td>`;
         table += td5;
         table += '</tr></tbody></table>';
@@ -142,7 +146,7 @@ async function getMatch(id, puuid) {
 async function getSpellIcon(id) {
     // produce the url of the spell of the given id
     try {
-        const res = await (0, node_fetch_1.default)('https://ddragon.leagueoflegends.com/cdn/12.22.1/data/en_US/summoner.json');
+        const res = await fetch('https://ddragon.leagueoflegends.com/cdn/15.19.1/data/en_US/summoner.json');
         if (!res.ok) {
             throw new Error('Error ' + res.status);
         }
@@ -151,7 +155,7 @@ async function getSpellIcon(id) {
         for (let s in spells) {
             const sdata = result.data[spells[s]];
             if (sdata.key == id) {
-                return 'http://ddragon.leagueoflegends.com/cdn/12.22.1/img/spell/' + spells[s] + '.png';
+                return 'https://ddragon.leagueoflegends.com/cdn/15.19.1/img/spell/' + spells[s] + '.png';
             }
         }
     }
@@ -169,7 +173,7 @@ async function getSpellIcon(id) {
 async function getPerkIcon(id) {
     // produce the icon url of the perk of the given id
     try {
-        const res = await (0, node_fetch_1.default)('http://ddragon.leagueoflegends.com/cdn/10.16.1/data/en_US/runesReforged.json');
+        const res = await fetch('https://ddragon.leagueoflegends.com/cdn/15.19.1/data/en_US/runesReforged.json');
         if (!res.ok) {
             throw new Error('Error ' + res.status);
         }
@@ -189,15 +193,23 @@ async function getPerkIcon(id) {
     }
 }
 async function getItemIcon(id) {
-    // produce the icon url of the item of the given id
+    // produce the icon <img> of the item of the given id
     try {
-        const res = await (0, node_fetch_1.default)('http://ddragon.leagueoflegends.com/cdn/12.22.1/data/en_US/item.json');
+        const res = await fetch('https://ddragon.leagueoflegends.com/cdn/15.19.1/data/en_US/item.json');
         if (!res.ok) {
             throw new Error('Error ' + res.status);
         }
         const result = (await res.json());
         const item = result.data[id];
-        return 'http://ddragon.leagueoflegends.com/cdn/12.22.1/img/item/' + item.image.full;
+        if (item) {
+            return `<img
+				src=${'https://ddragon.leagueoflegends.com/cdn/15.19.1/img/item/' + item.image.full}
+				width="32" height="32"
+			/>`;
+        }
+        else {
+            return '';
+        }
     }
     catch (error) {
         if (error instanceof Error) {
@@ -212,9 +224,9 @@ async function getItemIcon(id) {
 }
 const express = require('express');
 const app = express();
-const port = process.env.PORT || 3030;
+const PORT = process.env.PORT || 3030;
 app.use(express.json());
-app.use(express.urlencoded());
+app.use(express.urlencoded({ extended: true }));
 const wp1 = `
 		<html>
 			<head><title>League Stats</title></head>
@@ -223,7 +235,7 @@ const wp1 = `
 const sec1 = `
 		<div align="center"><h1>League of Legends Stats</h1>
 		<form action="/" method="post" id="form">
-			<input name="name" type="text" placeholder="enter summoner name" style="text-align:center" value="" />
+			<input name="name" type="text" placeholder="enter Riot ID (Name#TAG)" style="text-align:center" value="" />
 		</form>
 		<p><button form="form" type="submit" value="Submit">submit</button></p>
 		</div>
@@ -249,6 +261,6 @@ app.post('/', async (req, res) => {
     sec2 += result;
     res.send(wp1 + sec1 + sec2 + wp2);
 });
-app.listen(port, () => {
-    console.log(`[server]: Server is running at https://localhost:${port}`);
+app.listen(PORT, () => {
+    console.log(`[server]: Server is running at https://localhost:${PORT}`);
 });
